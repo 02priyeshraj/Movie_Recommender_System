@@ -5,7 +5,7 @@ It uses a **Content-Based Filtering approach** trained on the TMDB 5000 Movie Da
 
 ---
 
-## ✨ Features
+## Features
 
 * Get **top movie recommendations** instantly
 * Powered by **Content-Based Similarity (Cosine Similarity over Bag-of-Words/TF-IDF features)**
@@ -15,7 +15,7 @@ It uses a **Content-Based Filtering approach** trained on the TMDB 5000 Movie Da
 
 ---
 
-## ⚙️ Installation & Setup
+## Installation & Setup
 
 ```bash
 # 1. Clone the repository
@@ -38,7 +38,7 @@ streamlit run app.py
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 Recommendations_System/
@@ -55,7 +55,7 @@ Recommendations_System/
 
 ---
 
-## 🧠 How It Works
+## How It Works
 
 1. **Model Training (Notebook)**  
    - Dataset: TMDB 5000 Movies + Credits  
@@ -74,7 +74,7 @@ Recommendations_System/
 
 ---
 
-## 🖼️ Screenshots
+## Screenshots
 
 *(You can add screenshots after running the app)*  
 
@@ -86,7 +86,7 @@ Recommendations_System/
 
 ---
 
-## 🔑 API Key Setup
+## API Key Setup
 
 This project uses **TMDB API** for fetching posters.  
 Create a `.env` file in the root directory:
@@ -97,6 +97,6 @@ TMDB_API_KEY=your_api_key_here
 
 ---
 
-## 📝 License
+## License
 
 MIT © [Priyesh Raj](https://github.com/02priyeshraj)
