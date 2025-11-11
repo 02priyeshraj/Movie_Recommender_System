@@ -51,25 +51,27 @@ def download_data():
 # -------------------------------
 @st.cache_resource
 def load_data():
-    """Load pickled data and ensure correct format"""
+    """Load pickled data with caching"""
     download_data()
-    movies = pickle.load(open(MOVIE_LIST_PATH, "rb"))
-    similarity = pickle.load(open(SIMILARITY_PATH, "rb"))
 
-    # ✅ Ensure movies is a DataFrame
+    # Try to load the movie list safely
+    movies_data = pickle.load(open(MOVIE_LIST_PATH, "rb"))
+    similarity_data = pickle.load(open(SIMILARITY_PATH, "rb"))
+
+    # Handle case where movie data is not a DataFrame
     import pandas as pd
-    if not isinstance(movies, pd.DataFrame):
+    if not isinstance(movies_data, pd.DataFrame):
         try:
-            movies = pd.DataFrame(movies)
+            # If movies_data is a tuple/list, take the first element
+            movies_data = pd.DataFrame(movies_data)
         except Exception as e:
-            st.error(f"❌ Could not convert movies.pkl to DataFrame: {e}")
+            st.error(f"Error converting movie data: {e}")
             st.stop()
 
-    # ✅ Ensure columns are correct
-    expected_cols = {"movie_id", "title", "tags"}
-    if not expected_cols.issubset(set(movies.columns)):
-        st.warning(f"⚠️ Unexpected columns found: {movies.columns.tolist()}")
-    return movies, similarity
+    st.write("✅ Movies columns:", movies_data.columns.tolist())
+    st.write("✅ Similarity shape:", getattr(similarity_data, 'shape', 'Unknown'))
+
+    return movies_data, similarity_data
 
 
 # -------------------------------
@@ -92,13 +94,22 @@ def fetch_poster(movie_id):
 # Recommendation Function
 # -------------------------------
 def recommend(movie, movies, similarity):
-    index = movies[movies["title"] == movie].index[0]
-    distances = sorted(list(enumerate(similarity[index])), reverse=True, key=lambda x: x[1])
+    try:
+        index = movies[movies["title"] == movie].index[0]
+    except IndexError:
+        st.error("❌ Selected movie not found in dataset.")
+        return [], []
+
+    distances = sorted(
+        list(enumerate(similarity[index])),
+        reverse=True,
+        key=lambda x: x[1]
+    )
 
     recommended_movie_names = []
     recommended_movie_posters = []
 
-    for i in distances[1:30]:  # Fetch more to ensure valid posters
+    for i in distances[1:30]:
         movie_id = movies.iloc[i[0]].movie_id
         poster_url = fetch_poster(movie_id)
         if poster_url:
@@ -108,6 +119,7 @@ def recommend(movie, movies, similarity):
             break
 
     return recommended_movie_names, recommended_movie_posters
+
 
 # -------------------------------
 # Streamlit UI Config
