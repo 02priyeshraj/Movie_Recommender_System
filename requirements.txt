@@ -15,3 +15,4 @@ typing_extensions
 streamlit
 requests
 gdown
+dotenv
