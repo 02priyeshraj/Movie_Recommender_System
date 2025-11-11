@@ -8,20 +8,16 @@ from dotenv import load_dotenv
 # -------------------------------
 # Load environment variables
 # -------------------------------
-TMDB_API_KEY = None
-
-# Try loading from local .env (for local dev)
+# Load .env locally (Streamlit Cloud will just skip if no file)
 if os.path.exists(".env"):
     load_dotenv()
-    TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
-# If not found, try from Streamlit Cloud secrets
+# Prefer .env (local) else fallback to Streamlit Secrets
+TMDB_API_KEY = os.getenv("TMDB_API_KEY") or st.secrets.get("TMDB_API_KEY")
+
 if not TMDB_API_KEY:
-    try:
-        TMDB_API_KEY = st.secrets["TMDB_API_KEY"]
-    except Exception:
-        st.error("❌ TMDB_API_KEY not found in either .env or Streamlit Secrets.")
-        st.stop()
+    st.error("❌ TMDB_API_KEY not found in either .env or Streamlit Secrets.")
+    st.stop()
 
 # -------------------------------
 # File Config
