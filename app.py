@@ -162,7 +162,7 @@ movies, similarity = load_data()
 # -------------------------------
 # Dropdown & Recommendation UI
 # -------------------------------
-movie_list = movies["title"].astype(str).copy().values
+movie_list = movies["title"].values
 selected_movie = st.selectbox("🎥 Select a Movie:", movie_list)
 
 if st.button("🔍 Show Recommendation"):
