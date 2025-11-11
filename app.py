@@ -157,6 +157,9 @@ st.markdown("<h1>🎬 Movie Recommender System</h1>", unsafe_allow_html=True)
 # Load Data
 # -------------------------------
 movies, similarity = load_data()
+st.write("🧩 Columns present in movies DataFrame:", movies.columns.tolist())
+st.write("🧩 First 5 rows:")
+st.dataframe(movies.head())
 
 
 # -------------------------------
