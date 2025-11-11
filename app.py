@@ -81,10 +81,6 @@ def load_data():
     else:
         st.error("❌ Unexpected format for movie_list.pkl.")
         st.stop()
-
-    st.write("✅ Movies columns:", movies_data.columns.tolist())
-    st.write("✅ Similarity shape:", getattr(similarity_data, "shape", "Unknown"))
-
     return movies_data, similarity_data
 
 
@@ -184,10 +180,6 @@ st.markdown("<h1>🎬 Movie Recommender System</h1>", unsafe_allow_html=True)
 # Load Data
 # -------------------------------
 movies, similarity = load_data()
-st.write("🧩 Columns present in movies DataFrame:", movies.columns.tolist())
-st.write("🧩 First 5 rows:")
-st.dataframe(movies.head())
-
 
 # -------------------------------
 # Dropdown & Recommendation UI
