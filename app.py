@@ -51,27 +51,42 @@ def download_data():
 # -------------------------------
 @st.cache_resource
 def load_data():
-    """Load pickled data with caching"""
+    """Load pickled data safely with caching"""
     download_data()
+    import pandas as pd
 
-    # Try to load the movie list safely
+    # Load pickles
     movies_data = pickle.load(open(MOVIE_LIST_PATH, "rb"))
     similarity_data = pickle.load(open(SIMILARITY_PATH, "rb"))
 
-    # Handle case where movie data is not a DataFrame
-    import pandas as pd
-    if not isinstance(movies_data, pd.DataFrame):
-        try:
-            # If movies_data is a tuple/list, take the first element
-            movies_data = pd.DataFrame(movies_data)
-        except Exception as e:
-            st.error(f"Error converting movie data: {e}")
-            st.stop()
+    # --- Handle different formats ---
+    if isinstance(movies_data, tuple) or isinstance(movies_data, list):
+        # Sometimes both (movies, similarity) are stored together
+        if len(movies_data) == 2 and isinstance(movies_data[0], pd.DataFrame):
+            movies_data = movies_data[0]
+        else:
+            try:
+                movies_data = pd.DataFrame(movies_data, columns=["movie_id", "title", "tags"])
+            except Exception:
+                st.error("❌ Could not normalize movie_list.pkl format.")
+                st.stop()
+
+    elif isinstance(movies_data, pd.DataFrame):
+        # Just ensure proper columns
+        if not {"movie_id", "title", "tags"}.issubset(movies_data.columns):
+            st.warning("⚠️ Missing expected columns; attempting to repair...")
+            movies_data.reset_index(drop=True, inplace=True)
+            movies_data.columns = ["movie_id", "title", "tags"]
+
+    else:
+        st.error("❌ Unexpected format for movie_list.pkl.")
+        st.stop()
 
     st.write("✅ Movies columns:", movies_data.columns.tolist())
-    st.write("✅ Similarity shape:", getattr(similarity_data, 'shape', 'Unknown'))
+    st.write("✅ Similarity shape:", getattr(similarity_data, "shape", "Unknown"))
 
     return movies_data, similarity_data
+
 
 
 # -------------------------------
