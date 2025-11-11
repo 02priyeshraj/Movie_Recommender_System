@@ -2,31 +2,74 @@ import pickle
 import streamlit as st
 import requests
 import os
+import gdown
 from dotenv import load_dotenv
 
+# -------------------------------
 # Load environment variables
+# -------------------------------
 load_dotenv()
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
+# -------------------------------
+# File Config
+# -------------------------------
+MOVIE_LIST_PATH = "movie_list.pkl"
+SIMILARITY_PATH = "similarity.pkl"
 
+# Direct Google Drive links (converted from your shared links)
+MOVIE_LIST_URL = "https://drive.google.com/uc?id=1aCq5M2VGk4nV3l41U-8nOtyitnUVv9He"
+SIMILARITY_URL = "https://drive.google.com/uc?id=1iGnGesL-2wSPB4bQstgYoVR944-aZiUS"
+
+# -------------------------------
+# Ensure required data files exist
+# -------------------------------
+def download_data():
+    """Download .pkl files if they don't exist"""
+    os.makedirs(".", exist_ok=True)
+
+    if not os.path.exists(MOVIE_LIST_PATH):
+        with st.spinner("📦 Downloading movie_list.pkl (first time only)..."):
+            gdown.download(MOVIE_LIST_URL, MOVIE_LIST_PATH, quiet=False)
+        st.success("✅ movie_list.pkl downloaded!")
+
+    if not os.path.exists(SIMILARITY_PATH):
+        with st.spinner("📦 Downloading similarity.pkl (first time only)..."):
+            gdown.download(SIMILARITY_URL, SIMILARITY_PATH, quiet=False)
+        st.success("✅ similarity.pkl downloaded!")
+
+# -------------------------------
+# Data Loader (cached)
+# -------------------------------
+@st.cache_resource
+def load_data():
+    """Load pickled data with caching"""
+    download_data()
+    movies = pickle.load(open(MOVIE_LIST_PATH, "rb"))
+    similarity = pickle.load(open(SIMILARITY_PATH, "rb"))
+    return movies, similarity
+
+# -------------------------------
 # Function to fetch movie poster
+# -------------------------------
 def fetch_poster(movie_id):
     url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={TMDB_API_KEY}&language=en-US"
     try:
         response = requests.get(url, timeout=5)
         response.raise_for_status()
         data = response.json()
-        poster_path = data.get('poster_path')
-        if poster_path:  # Only return if poster exists
+        poster_path = data.get("poster_path")
+        if poster_path:
             return f"https://image.tmdb.org/t/p/w500/{poster_path}"
     except Exception:
         return None
-    return None  # ❌ Skip movies without posters
+    return None
 
-
-# Function to get movie recommendations
-def recommend(movie):
-    index = movies[movies['title'] == movie].index[0]
+# -------------------------------
+# Recommendation Function
+# -------------------------------
+def recommend(movie, movies, similarity):
+    index = movies[movies["title"] == movie].index[0]
     distances = sorted(list(enumerate(similarity[index])), reverse=True, key=lambda x: x[1])
 
     recommended_movie_names = []
@@ -35,21 +78,20 @@ def recommend(movie):
     for i in distances[1:30]:  # Fetch more to ensure valid posters
         movie_id = movies.iloc[i[0]].movie_id
         poster_url = fetch_poster(movie_id)
-
-        if poster_url:  # ✅ Only include if poster exists
+        if poster_url:
             recommended_movie_posters.append(poster_url)
             recommended_movie_names.append(movies.iloc[i[0]].title)
-
-        if len(recommended_movie_names) >= 9:  # Limit to 9 recommendations
+        if len(recommended_movie_names) >= 9:
             break
 
     return recommended_movie_names, recommended_movie_posters
 
-
-# Streamlit UI
+# -------------------------------
+# Streamlit UI Config
+# -------------------------------
 st.set_page_config(page_title="Movie Recommender 🎬", layout="wide")
 
-# 🎨 Custom CSS styling
+# Custom Styling
 st.markdown(
     """
     <style>
@@ -80,31 +122,33 @@ st.markdown(
     }
     </style>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
+# -------------------------------
 # Header
+# -------------------------------
 st.markdown("<h1>🎬 Movie Recommender System</h1>", unsafe_allow_html=True)
 
-# Load movie data and similarity matrix
-movies = pickle.load(open('movie_list.pkl', 'rb'))
-similarity = pickle.load(open('similarity.pkl', 'rb'))
+# -------------------------------
+# Load Data
+# -------------------------------
+movies, similarity = load_data()
 
-# Dropdown for selecting a movie
-movie_list = movies['title'].values
+# -------------------------------
+# Dropdown & Recommendation UI
+# -------------------------------
+movie_list = movies["title"].values
 selected_movie = st.selectbox("🎥 Select a Movie:", movie_list)
 
-# Show recommendations when button is clicked
-if st.button('🔍 Show Recommendation'):
-    recommended_movie_names, recommended_movie_posters = recommend(selected_movie)
+if st.button("🔍 Show Recommendation"):
+    recommended_movie_names, recommended_movie_posters = recommend(selected_movie, movies, similarity)
 
     st.markdown("## 🍿 Recommended Movies for You")
     st.write("---")
 
-    # Display movies in rows of 3
     for i in range(0, len(recommended_movie_names), 3):
         cols = st.columns(3, gap="large")
-
         for j in range(3):
             if i + j < len(recommended_movie_names):
                 with cols[j]:
