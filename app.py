@@ -51,11 +51,26 @@ def download_data():
 # -------------------------------
 @st.cache_resource
 def load_data():
-    """Load pickled data with caching"""
+    """Load pickled data and ensure correct format"""
     download_data()
     movies = pickle.load(open(MOVIE_LIST_PATH, "rb"))
     similarity = pickle.load(open(SIMILARITY_PATH, "rb"))
+
+    # ✅ Ensure movies is a DataFrame
+    import pandas as pd
+    if not isinstance(movies, pd.DataFrame):
+        try:
+            movies = pd.DataFrame(movies)
+        except Exception as e:
+            st.error(f"❌ Could not convert movies.pkl to DataFrame: {e}")
+            st.stop()
+
+    # ✅ Ensure columns are correct
+    expected_cols = {"movie_id", "title", "tags"}
+    if not expected_cols.issubset(set(movies.columns)):
+        st.warning(f"⚠️ Unexpected columns found: {movies.columns.tolist()}")
     return movies, similarity
+
 
 # -------------------------------
 # Function to fetch movie poster
@@ -143,10 +158,11 @@ st.markdown("<h1>🎬 Movie Recommender System</h1>", unsafe_allow_html=True)
 # -------------------------------
 movies, similarity = load_data()
 
+
 # -------------------------------
 # Dropdown & Recommendation UI
 # -------------------------------
-movie_list = movies["title"].values
+movie_list = movies["title"].astype(str).copy().values
 selected_movie = st.selectbox("🎥 Select a Movie:", movie_list)
 
 if st.button("🔍 Show Recommendation"):
